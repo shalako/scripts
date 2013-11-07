@@ -1,13 +1,13 @@
 #! /bin/bash
 
 echo 'Downloading latest binary'
-wget http://go-cli.s3.amazonaws.com/go-cf-darwin-amd64.tgz
+wget https://github.com/cloudfoundry/cli/releases/download/v6.0.0-beta/gcf-darwin-amd64.tgz
 
 echo 'Uncompressing...'
-tar -xf go-cf-darwin-amd64.tgz 
+tar -xf gcf-darwin-amd64.tgz
 
 echo 'Moving binary to /usr/local/bin/'
 mv go-cf /usr/local/bin/
 
 echo 'Deleting the tarball'
-rm go-cf-darwin-amd64.tgz 
+rm gcf-darwin-amd64.tgz
