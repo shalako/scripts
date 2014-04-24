@@ -1,13 +1,16 @@
 #! /bin/bash
 
-echo 'Downloading latest binary'
-wget http://go-cli.s3.amazonaws.com/go-cf-darwin-amd64.tgz
+echo 'Downloading latest edge'
+wget http://go-cli.s3.amazonaws.com/master/cf-darwin-amd64.tgz
+
+#echo 'Downloading latest stable'
+#wget http://go-cli.s3-website-us-east-1.amazonaws.com/releases/latest/cf-darwin-amd64.tgz
 
 echo 'Uncompressing...'
-tar -xf go-cf-darwin-amd64.tgz 
+tar -xf cf-darwin-amd64.tgz
 
-echo 'Moving binary to /usr/local/bin/'
-mv go-cf /usr/local/bin/
+echo 'Moving binary to /usr/local/bin/cf'
+mv cf /usr/local/bin/cf
 
-echo 'Deleting the tarball'
-rm go-cf-darwin-amd64.tgz 
+echo 'Deleting tarball'
+rm cf-darwin-amd64.tgz
