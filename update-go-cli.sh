@@ -1,5 +1,7 @@
 #! /bin/bash
 
+old_version=`cf -v`
+
 echo 'Downloading latest edge'
 wget http://go-cli.s3.amazonaws.com/master/cf-darwin-amd64.tgz
 
@@ -14,3 +16,10 @@ mv cf /usr/local/bin/cf
 
 echo 'Deleting tarball'
 rm cf-darwin-amd64.tgz
+
+echo ' '
+printf "Previous Version:  "
+echo $old_version
+
+printf "New Version:       "
+cf -v
