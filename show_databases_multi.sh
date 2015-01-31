@@ -1,7 +1,7 @@
 #!/bin/bash
 db_host=$1
 root_pw="--login-path=local"
-MAX_PARALLEL_CONNECTIONS=100
+MAX_PARALLEL_CONNECTIONS=5
 
 for i in $(seq 1 10000); do
   echo -n "creating $MAX_PARALLEL_CONNECTIONS parallel connections... "
