@@ -19,6 +19,8 @@ Options:
 "
 
 ## Changelog
+# Knows URIs for cf and ltc binaries
+# Allows user to specify stable or edge
 # Now saves previous semvers as .old, overwrites new builds of current semver
 # Logic to make filenames include semver and symlink binary and binary.old
 # Used $OSTYPE to auto-choose correct version # FIXME: Windows??
