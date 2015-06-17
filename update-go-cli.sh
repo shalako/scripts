@@ -1,5 +1,10 @@
 #! /bin/bash
 
+# DEFAULTS
+cli="cf"
+rel=1
+bindir="/usr/local/bin"
+
 usage="\
 $0  Download and update a new version of a binary.
 
@@ -15,7 +20,7 @@ Options:
     -r stable|edge    Specify stable (release) or edge (unstable) release
     -p bindir         Specify the target directory to install the binary
                       (Defaults to: $bindir)
-    -v                Verbose mode
+    -x                Debug mode
 "
 
 ## Changelog
@@ -27,11 +32,6 @@ Options:
 # Added getopt to process command line args, also usage help text
 # Switched from wget to curl, since OSX doesn't ship with wget
 # When downloading CF, identify source as "internal" (vs github)
-
-# DEFAULTS
-cli="cf"
-rel=1
-bindir="/usr/local/bin"
 
 # Format is OS_CLI(Release Unstable)
 darwin_CF=("https://cli.run.pivotal.io/stable?release=macosx64-binary&source=internal" "https://cli.run.pivotal.io/edge?arch=macosx64&source=internal")
@@ -49,7 +49,7 @@ windows_LTC=("/bin/false" "/bin/false")
 getver () {
     if [ -e ${1}/$2 ]; then
         current_ver=`${1}/$2 -v`
-        short=${current_ver##${1}/$2 version }
+        short=${current_ver##*$2 version }
         version=${short/-*}
     else
         version="N/A"
@@ -65,22 +65,23 @@ download () {
 }
 
 relink () {
-    if [ $cur_version != $new_version ] ; then
+    if [ "$cur_version"X != "N/AX" -a "$cur_version"X != "$new_version"X ] ; then
         # If new version, overwrite any .old.
-        if [ ! -L $bindir/$cli ] ; then 
-            mv $bindir/${cli} $bindir/${cli}-$cur_version
+        if [ ! -L ${bindir}/$cli ] ; then 
+            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
         fi
-        if [ -e $bindir/${cli}.old ] ; then rm $bindir/${cli}.old; fi
+        if [ -e ${bindir}/${cli}.old ] ; then rm $bindir/${cli}.old; fi
         ln -s $bindir/${cli}-$cur_version $bindir/${cli}.old
         old_version=$cur_version
     fi
     
-    if [ ! -L $bindir/${cli} ]; then mv ${cli} $bindir/${cli}-$new_version; fi
-    if [ -e $bindir/$cli ] ; then rm $bindir/$cli; fi
-    ln -s $bindir/${cli}-$new_version $bindir/${cli}
+    if [ ! -L ${bindir}/$cli ]; then mv ${bindir}/$cli ${bindir}/${cli}-$cur_version; fi
+    if [ -e ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
+    mv $cli ${bindir}/${cli}-$new_version
+    ln -s ${bindir}/${cli}-$new_version ${bindir}/$cli
 }
 
-args=`getopt vnhr:c:p: $*`; errcode=$?; set -- $args
+args=`getopt xnhr:c:p: $*`; errcode=$?; set -- $args
 if [ 0 -ne $errcode ]; then echo ; echo "$usage" ; exit $errcode ; fi
 
 for i ; do
@@ -88,14 +89,14 @@ for i ; do
         -h)
             echo "$usage"
             exit 0 ;;
-        -v)
-            echo "Verbose mode."
+        -x)
+            echo "Debug mode."
             set -x ; shift ;;
         -r)
             case "$2" in
-                stable)
+                release|stable)
                     rel=0 ;;
-                edge)
+                edge|unstable)
                     rel=1 ;;
                 *)
                     echo "Error: release must be stable or edge."
@@ -173,5 +174,5 @@ esac
 echo "Installing in $bindir"
 relink
 
-echo "Old: ${old_version}: ${bindir}/${cli}.old"
+if [ "$old_version"X != "N/AX" ]; then echo "Old: ${old_version}: ${bindir}/${cli}.old"; fi
 echo "New: ${new_version}: ${bindir}/${cli}"
