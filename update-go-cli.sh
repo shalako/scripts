@@ -75,7 +75,7 @@ relink () {
         old_version=$cur_version
     fi
     
-    if [ ! -L ${bindir}/$cli ]; then mv ${bindir}/$cli ${bindir}/${cli}-$cur_version; fi
+    if [ -e ${bindir}/$cli -a ! -L ${bindir}/$cli ]; then mv ${bindir}/$cli ${bindir}/${cli}-$cur_version; fi
     if [ -e ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
     mv $cli ${bindir}/${cli}-$new_version
     ln -s ${bindir}/${cli}-$new_version ${bindir}/$cli
