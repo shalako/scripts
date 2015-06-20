@@ -47,7 +47,7 @@ done
 
 echo ; echo 
 if [ 0 -eq $overall_status ]; then
-    echo "OVERALL: Succeded!"
+    echo "OVERALL: Succeeded!"
     exit 0
 else
     echo "OVERALL: Failed with $overall_status errors."
