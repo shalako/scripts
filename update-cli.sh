@@ -64,8 +64,10 @@ windows_BOSH=("/bin/false" "/bin/false")
 getver () {
     if [ -e ${1}/$2 ]; then
         current_ver=`${1}/$2 -v`
-        short=${current_ver##*$2*version }
-        version=${short/-*}
+        version=$(echo $current_ver | sed 's/.*version \([v0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
+        build=$(echo $current_ver | sed 's/.*version [v0-9]*\.[0-9]*\.[0-9]*-*\([^ ]*\).*/\1/')
+        # short=${current_ver##*$2*version }
+        # version=${short/-*}
     else
         version="N/A"
     fi
@@ -149,6 +151,11 @@ for i ; do
             shift ; break ;;
     esac
 done    
+
+if [ ! -e $bindir ]; then
+    echo "ERROR: Target directory does not exist."
+    exit 1
+fi
 
 if [ ! -z $alt_url ]; then
     cli_uri=$alt_url
