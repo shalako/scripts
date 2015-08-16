@@ -64,10 +64,8 @@ windows_BOSH=("/bin/false" "/bin/false")
 getver () {
     if [ -e ${1}/$2 ]; then
         current_ver=`${1}/$2 -v`
-        version=$(echo $current_ver | sed 's/.*version \([v0-9]*\.[0-9]*\.[0-9]*\).*/\1/')
-        build=$(echo $current_ver | sed 's/.*version [v0-9]*\.[0-9]*\.[0-9]*-*\([^ ]*\).*/\1/')
-        # short=${current_ver##*$2*version }
-        # version=${short/-*}
+        version=$(echo $current_ver | sed -E 's/.*version (v*[^-]+).*/\1/')
+        build=$(echo $current_ver | sed -E 's/[^-]+-([^-]+).*/\1/')
     else
         version="N/A"
     fi
@@ -82,21 +80,29 @@ download () {
     fi
 }
 
+# By the time relink() is called, $cur_version and $cur_build should
+# already be set, and will bet set to "N/A" if no existing version
 relink () {
     if [ "$cur_version"X != "N/AX" -a "$cur_version"X != "$new_version"X ] ; then
         # If new version, overwrite any .old.
         if [ ! -L ${bindir}/$cli ] ; then 
-            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
+            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build
         fi
         if [ -e ${bindir}/${cli}.old ] ; then rm $bindir/${cli}.old; fi
-        ln -s $bindir/${cli}-$cur_version $bindir/${cli}.old
+        ln -s $bindir/${cli}-$cur_version-$cur_build $bindir/${cli}.old
+        # Update old_version variables, which pointed to the previous .old version
         old_version=$cur_version
+        old_build=$cur_build
     fi
+
+    # If there's a pre-existing bin that's not a link, move it aside
+    if [ -e ${bindir}/$cli -a ! -L ${bindir}/$cli ]; then
+        mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build;
+    fi
+    if [ -e ${bindir}/$cli -a -L ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
     
-    if [ -e ${bindir}/$cli -a ! -L ${bindir}/$cli ]; then mv ${bindir}/$cli ${bindir}/${cli}-$cur_version; fi
-    if [ -e ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
-    mv $cli ${bindir}/${cli}-$new_version
-    ln -s ${bindir}/${cli}-$new_version ${bindir}/$cli
+    mv $cli ${bindir}/${cli}-$new_version-$new_build
+    ln -s ${bindir}/${cli}-$new_version-$new_build ${bindir}/$cli
 }
 
 args=`getopt vxnhr:c:p:u: $*`; errcode=$?; set -- $args
@@ -182,37 +188,41 @@ fi
 if [ -e $bindir/${cli}.old ] ; then
     getver $bindir ${cli}.old
     old_version=$version
+    old_build=$build
 else
     old_version="N/A"
+    old_build="N/A"
 fi
     
-echo "Downloading $cli_uri"
+getver ${bindir} $cli
+cur_version=$version
+cur_build=$build
 cd /tmp
+echo "Downloading $cli_uri"
+download $cli_uri $cli
+# ltc and cf CLIs are distributed slightly differently
 case $cli in
     cf)
-        getver ${bindir} cf
-        cur_version=$version
-        download $cli_uri $cli
         tar xf cf-$$.bin
         rm cf-$$.bin
-        getver . cf
-        new_version=$version
         ;;
     ltc)
-        getver ${bindir} ltc
-        cur_version=$version
-        download $cli_uri $cli
         mv $cli-$$.bin $cli
         chmod a+rx $cli
-        getver . ltc
-        new_version=$version
         ;;
     bosh)
+        echo "BOSH not supported. How did you even get to this step, anyways?"
+        exit -1
         ;;
 esac
+getver . $cli
+new_version=$version
+new_build=$build
 
 echo "Installing in $bindir"
 relink
 
-if [ "$old_version"X != "N/AX" ]; then echo "Old: ${old_version}: ${bindir}/${cli}.old"; fi
+# If we've updated the .old link, report what the new .old is.
+if [ "$old_version"X != "N/AX" ]; then echo "Old: ${old_version}-$old_build: ${bindir}/${cli}.old"; fi
+
 echo "New: ${new_version}: ${bindir}/${cli}"

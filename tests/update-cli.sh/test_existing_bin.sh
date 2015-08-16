@@ -35,7 +35,7 @@ if [ ! -L ${tmpdir}/cf.old ]; then
     failCount=$((failCount + 1))
 fi
 
-if [ ! -f ${tmpdir}/cf-0.0.1 ]; then
+if [ ! -f ${tmpdir}/cf-0.0.1* ]; then
     echo "FAILED: no old binary file."
     failCount=$((failCount + 1))
 fi
