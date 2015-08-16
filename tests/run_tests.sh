@@ -14,7 +14,7 @@ if [ 0 = $# ]; then
     exit 1
 fi
 
-echo "Performing tests on: $*"
+echo "Performing tests on: $*" ; echo
 
 overall_status=0
 for d in $*; do
@@ -23,7 +23,7 @@ for d in $*; do
     err_count=0
 
     for i in $d/test_* ; do
-        echo "${i}:"
+        echo "- ${i}"
         mk_tmpfile
         $i > $tmpfile 2>&1
         err=$?
