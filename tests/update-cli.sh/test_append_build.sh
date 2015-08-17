@@ -12,8 +12,8 @@ source $parentDir/utils.sh
 prep_tmpdir
 echo "tmpdir is: $tmpdir"
 
-${binDir}/$bin -x -c ltc -p $tmpdir
-${binDir}/$bin -x -c cf -p $tmpdir
+${binDir}/$bin -x -c ltc -p $tmpdir -r edge
+${binDir}/$bin -x -c cf -p $tmpdir -r edge
 
 failCount=0
 # There should be one link pointing to a file with the cli-ver-buildno format

@@ -64,8 +64,14 @@ windows_BOSH=("/bin/false" "/bin/false")
 getver () {
     if [ -e ${1}/$2 ]; then
         current_ver=`${1}/$2 -v`
-        version=$(echo $current_ver | sed -E 's/.*version (v*[^-]+).*/\1/')
-        build=$(echo $current_ver | sed -E 's/[^-]+-([^-]+).*/\1/')
+        version=$(echo $current_ver | sed -E 's/.*version (v*[^-[:space:]]+).*/\1/')
+        # LTC final releases don't have a build number. CF still has a SHA.
+        echo $current_ver | egrep -q '[^-]+-([^-]+)'
+        if [ 0 -eq $? ]; then
+            build=$(echo $current_ver | sed -E 's/[^-]+-([^-]+).*/\1/')
+        else
+            build="N/A"
+        fi
     else
         version="N/A"
     fi
@@ -81,15 +87,23 @@ download () {
 }
 
 # By the time relink() is called, $cur_version and $cur_build should
-# already be set, and will bet set to "N/A" if no existing version
+# already be set, and will bet set to "N/A" if no existing version or build
 relink () {
     if [ "$cur_version"X != "N/AX" -a "$cur_version"X != "$new_version"X ] ; then
-        # If new version, overwrite any .old.
-        if [ ! -L ${bindir}/$cli ] ; then 
-            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build
-        fi
+        # This is a new version, so replace any .old with the current binary
         if [ -e ${bindir}/${cli}.old ] ; then rm $bindir/${cli}.old; fi
-        ln -s $bindir/${cli}-$cur_version-$cur_build $bindir/${cli}.old
+        if [ ! -L ${bindir}/$cli ] ; then
+            if [ "$cur_build"X -ne != "N/AX" ]; then
+                mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build
+            else
+                mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
+            fi
+        fi
+        if [ "$cur_build"X -ne != "N/AX" ]; then
+            ln -s $bindir/${cli}-$cur_version-$cur_build $bindir/${cli}.old
+        else
+            ln -s $bindir/${cli}-$cur_version $bindir/${cli}.old
+        fi
         # Update old_version variables, which pointed to the previous .old version
         old_version=$cur_version
         old_build=$cur_build
@@ -97,12 +111,25 @@ relink () {
 
     # If there's a pre-existing bin that's not a link, move it aside
     if [ -e ${bindir}/$cli -a ! -L ${bindir}/$cli ]; then
-        mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build;
+        if [ "$cur_build"X -ne "N/AX" ]; then
+            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build;
+        else
+            mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
+        fi
     fi
-    if [ -e ${bindir}/$cli -a -L ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
     
-    mv $cli ${bindir}/${cli}-$new_version-$new_build
-    ln -s ${bindir}/${cli}-$new_version-$new_build ${bindir}/$cli
+    # Finally, if we haven't moved it aside already, then we're just
+    # overwriting the current version with a new build, so remove the
+    # current binary.
+    if [ -e ${bindir}/$cli -a -L ${bindir}/$cli ] ; then rm ${bindir}/$cli; fi
+
+    if [ 0 -eq $rel ]; then
+        mv $cli ${bindir}/${cli}-$new_version
+        ln -s ${bindir}/${cli}-$new_version ${bindir}/$cli
+    else
+        mv $cli ${bindir}/${cli}-$new_version-$new_build
+        ln -s ${bindir}/${cli}-$new_version-$new_build ${bindir}/$cli
+    fi
 }
 
 args=`getopt vxnhr:c:p:u: $*`; errcode=$?; set -- $args
@@ -197,6 +224,7 @@ fi
 getver ${bindir} $cli
 cur_version=$version
 cur_build=$build
+
 cd /tmp
 echo "Downloading $cli_uri"
 download $cli_uri $cli
@@ -217,12 +245,20 @@ case $cli in
 esac
 getver . $cli
 new_version=$version
-new_build=$build
+if [ 1 -eq $rel ]; then
+    new_build=$build
+fi
 
 echo "Installing in $bindir"
 relink
 
 # If we've updated the .old link, report what the new .old is.
-if [ "$old_version"X != "N/AX" ]; then echo "Old: ${old_version}-$old_build: ${bindir}/${cli}.old"; fi
+if [ "$old_version"X != "N/AX" ]; then
+    if [ "$old_build"X != "N/AX" ]; then
+        echo "Old version ${old_version}-$old_build: ${bindir}/${cli}.old";
+    else
+        echo "Old version ${old_version}: ${bindir}/${cli}.old";
+    fi
+fi
 
-echo "New: ${new_version}: ${bindir}/${cli}"
+echo "New version ${new_version}: ${bindir}/${cli}"
