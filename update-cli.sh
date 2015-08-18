@@ -93,13 +93,13 @@ relink () {
         # This is a new version, so replace any .old with the current binary
         if [ -e ${bindir}/${cli}.old ] ; then rm $bindir/${cli}.old; fi
         if [ ! -L ${bindir}/$cli ] ; then
-            if [ "$cur_build"X -ne != "N/AX" ]; then
+            if [ "$cur_build"X != "N/AX" ]; then
                 mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build
             else
                 mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
             fi
         fi
-        if [ "$cur_build"X -ne != "N/AX" ]; then
+        if [ "$cur_build"X != "N/AX" ]; then
             ln -s $bindir/${cli}-$cur_version-$cur_build $bindir/${cli}.old
         else
             ln -s $bindir/${cli}-$cur_version $bindir/${cli}.old
@@ -111,7 +111,7 @@ relink () {
 
     # If there's a pre-existing bin that's not a link, move it aside
     if [ -e ${bindir}/$cli -a ! -L ${bindir}/$cli ]; then
-        if [ "$cur_build"X -ne "N/AX" ]; then
+        if [ "$cur_build"X != "N/AX" ]; then
             mv ${bindir}/$cli ${bindir}/${cli}-$cur_version-$cur_build;
         else
             mv ${bindir}/$cli ${bindir}/${cli}-$cur_version
